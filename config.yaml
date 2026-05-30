@@ -1,0 +1,61 @@
+# ----------------------------------------------------------------------------
+# Behaviour-Aware Trading System — central configuration
+# Loaded and validated by src/config.py
+# ----------------------------------------------------------------------------
+
+data:
+  tickers: ["AAPL", "MSFT", "SPY"]   # symbols to download
+  start_date: "2015-01-01"
+  end_date: "2024-12-31"
+  source: "yahoo"                     # OHLCV via yfinance
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  include_vix: false                  # optional VIX feature
+
+# Target definition (what "up/down" means)
+labels:
+  horizon: 1                          # predict N days ahead
+  threshold: 0.0                      # return > threshold => "up" (1)
+
+features:
+  sma_windows: [10, 20, 50]
+  ema_windows: [12, 26]
+  rsi_period: 14
+  momentum_period: 10
+  volatility_window: 20
+  rolling_windows: [5, 20]
+
+behavioral:
+  fear: { volatility_window: 20 }
+  greed: { momentum_window: 10, volume_window: 20 }
+  herd: { volume_spike_z: 2.0, price_move_z: 2.0 }
+  normalize: "zscore"                 # zscore | minmax
+
+split:
+  scheme: "walk_forward"             # walk_forward | expanding | single
+  n_splits: 5
+  test_size: 0.2                      # used by single-split scheme
+  gap: 0                              # embargo days between train/test
+
+models:
+  active: ["logistic", "random_forest", "xgboost"]
+  random_state: 42
+  logistic: { C: 1.0, max_iter: 1000 }
+  random_forest: { n_estimators: 300, max_depth: 8 }
+  xgboost: { n_estimators: 400, max_depth: 5, learning_rate: 0.05 }
+
+backtest:
+  initial_capital: 100000
+  transaction_cost: 0.0005            # per-trade fraction
+  allow_short: false
+
+experiment:
+  feature_sets: ["quant_only", "quant_plus_behavioral"]   # the ablation
+  metrics: ["accuracy", "precision", "recall", "sharpe", "max_drawdown"]
+
+paths:
+  results_figures: "results/figures"
+  results_tables: "results/tables"
+  results_models: "results/models"
+
+seed: 42
