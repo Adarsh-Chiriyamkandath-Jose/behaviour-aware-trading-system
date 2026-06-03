@@ -37,4 +37,10 @@ def expanding_zscore(series: pd.Series, min_periods: int = 20) -> pd.Series:
     """
     mean = series.expanding(min_periods=min_periods).mean()
     std = series.expanding(min_periods=min_periods).std()
-    return (series - mean) / std
+    z = (series - mean) / std
+    # A flat series so far (std == 0) has zero deviation, not an undefined one.
+    # This matters for the gated `herd` signal, which is constant-zero until it
+    # first fires — without this guard the whole column would be NaN and every
+    # row would be dropped downstream.
+    z = z.replace([np.inf, -np.inf], np.nan).mask(std == 0, 0.0)
+    return z
