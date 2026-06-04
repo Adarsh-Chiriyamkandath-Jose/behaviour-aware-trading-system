@@ -36,3 +36,6 @@ Thumbs.db
 
 # Env / secrets
 .env
+
+# Streamlit runtime logs
+streamlit_*.log
