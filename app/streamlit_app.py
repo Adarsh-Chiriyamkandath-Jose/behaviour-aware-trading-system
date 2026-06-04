@@ -188,7 +188,7 @@ def main() -> None:
     _kpi_row(res)
     st.write("")
 
-    tab_perf, tab_quality, tab_drivers = st.tabs(["📊 Performance", "🎯 Call quality", "🧠 What drove it"])
+    tab_perf, tab_quality, tab_drivers = st.tabs(["Performance", "Call quality", "What drove it"])
     with tab_perf:
         _performance_tab(res, config)
     with tab_quality:
