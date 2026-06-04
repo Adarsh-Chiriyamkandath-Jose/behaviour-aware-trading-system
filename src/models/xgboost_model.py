@@ -39,7 +39,13 @@ class XGBoostModel(BaseModel):
             random_state=random_state,
             eval_metric="logloss",
             tree_method="hist",
-            n_jobs=-1,
+            # Single-threaded so results are bit-for-bit reproducible. The "hist"
+            # builder sums gradient histograms in parallel, and the floating-point
+            # reduction order depends on the active thread count — so n_jobs=-1
+            # can yield slightly different splits (and a few flipped predictions)
+            # across machines/environments, e.g. script vs Jupyter kernel. The
+            # dataset is small, so the speed cost is negligible.
+            n_jobs=1,
         )
         self._columns: list[str] | None = None
 
