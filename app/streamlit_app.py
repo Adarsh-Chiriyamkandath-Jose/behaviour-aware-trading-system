@@ -109,7 +109,7 @@ def _performance_tab(res: dict, config: dict) -> None:
         },
         index=["Total return", "Annual return", "Annual volatility", "Sharpe", "Max drawdown"],
     )
-    fmt = table.copy()
+    fmt = table.astype(object)
     for row in ["Total return", "Annual return", "Annual volatility", "Max drawdown"]:
         fmt.loc[row] = table.loc[row].map(lambda v: f"{v:.1%}")
     fmt.loc["Sharpe"] = table.loc["Sharpe"].map(lambda v: f"{v:.2f}")
@@ -151,7 +151,7 @@ def main() -> None:
 
     # ---- Sidebar: controls -------------------------------------------------
     sb = st.sidebar
-    sb.title("📈 Controls")
+    sb.title("Controls")
     sb.caption("Configure a run, then read the results on the right.")
 
     sb.subheader("Data")
