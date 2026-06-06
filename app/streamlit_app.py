@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
+from src import persistence as P
 from src.backtest import buy_and_hold, run_backtest, signal_from_predictions
 from src.config import load_config
 from src.data.loader import load_ohlcv
@@ -34,8 +35,14 @@ ACCENT = "#2f9e6f"
 
 @st.cache_data(show_spinner=False)
 def _prepare(ticker: str, _config: dict) -> pd.DataFrame:
-    raw = load_ohlcv(ticker, _config["data"]["start_date"], _config["data"]["end_date"], _config["data"]["raw_dir"])
-    return build_model_frame(raw, _config)
+    # Use the committed processed frame if present and config-compatible; otherwise
+    # build it from raw and cache it for next time (populates data/processed/).
+    frame = P.load_processed_frame(ticker, _config)
+    if frame is None:
+        raw = load_ohlcv(ticker, _config["data"]["start_date"], _config["data"]["end_date"], _config["data"]["raw_dir"])
+        frame = build_model_frame(raw, _config)
+        P.save_processed_frame(frame, ticker, _config)
+    return frame
 
 
 @st.cache_data(show_spinner=False)
@@ -46,7 +53,14 @@ def _evaluate(ticker: str, model_name: str, feature_set: str, _config: dict) -> 
     cols = feature_columns(frame, feature_set)
 
     train_idx, test_idx = single_split(frame, _config["split"].get("test_size", 0.2))
-    model = build_model(model_name, _config).fit(frame.loc[train_idx, cols], frame.loc[train_idx, "target"])
+    # Reuse a committed model if it loads and matches the config; else train and cache
+    # it (populates results/models/). A failed load — e.g. a library-version mismatch
+    # on the cloud — just falls through to retraining, so the app never breaks.
+    key = f"{ticker}_{model_name}_{feature_set}"
+    model = P.load_model(key, _config)
+    if model is None:
+        model = build_model(model_name, _config).fit(frame.loc[train_idx, cols], frame.loc[train_idx, "target"])
+        P.save_model(key, model, _config)
 
     y_true = frame.loc[test_idx, "target"]
     pred = model.predict(frame.loc[test_idx, cols])
@@ -146,7 +160,7 @@ def _drivers_tab(res: dict, feature_set: str) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Behaviour-Aware Trading System", page_icon="📈", layout="wide")
+    st.set_page_config(page_title="Behaviour-Aware Trading System", page_icon=None, layout="wide")
     config = load_config(os.path.dirname(__file__) + "/../config.yaml")
 
     # ---- Sidebar: controls -------------------------------------------------

@@ -14,19 +14,26 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
-# Data — keep code in git, not datasets (regenerate via loader)
+# Data — keep code in git, not raw datasets (raw is regenerated via the loader).
+# The processed feature CSVs ARE committed: they're small, readable, and let the
+# dashboard skip feature-building on a cold start.
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/*.csv
+!data/processed/_manifest.json
 
-# Results — keep folders, ignore generated artifacts
+# Results — ignore generated figures/tables, but DO commit the trained models so
+# the dashboard can load them instead of retraining (best-effort; it falls back to
+# retraining if a model can't be loaded).
 results/figures/*
 results/tables/*
 results/models/*
 !results/figures/.gitkeep
 !results/tables/.gitkeep
 !results/models/.gitkeep
+!results/models/*.joblib
 
 # OS / IDE
 .DS_Store
